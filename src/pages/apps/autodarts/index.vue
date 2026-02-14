@@ -16,8 +16,8 @@
       type="warning"
       variant="tonal"
     >
-      <div class="text-h6 mb-2">Autodarts Manager Not Found</div>
-      <div class="text-body-2">Autodarts Manager is not installed at /opt/autodarts-manager.</div>
+      <div class="text-h6 mb-2">Autodarts Not Installed</div>
+      <div class="text-body-2">Install Autodarts to finish setup.</div>
     </v-alert>
 
     <div v-if="loading && !status" class="text-center py-16">
@@ -258,12 +258,27 @@
     return ''
   }
 
+  function isAutodartsUnavailableError (error) {
+    const message = String(error?.message || '').toLowerCase()
+    return error?.status === 404
+      || error?.status === 503
+      || message.includes('not running')
+      || message.includes('not installed')
+      || message.includes('not found')
+  }
+
   async function fetchStatus () {
     try {
       loading.value = true
       const response = await getAutodartsStatus()
       status.value = response.data
+      syncBoardManagerPolling()
     } catch (error) {
+      if (isAutodartsUnavailableError(error)) {
+        status.value = { installed: false, active: false, manager_available: false }
+        stopBoardManagerPolling()
+        return
+      }
       showError('Failed to fetch Autodarts status: ' + error.message)
     } finally {
       loading.value = false
@@ -316,6 +331,11 @@
     }
   }
 
+  function syncBoardManagerPolling () {
+    if (status.value?.installed) startBoardManagerPolling()
+    else stopBoardManagerPolling()
+  }
+
 
   const boardManagerUrl = computed(() => {
     const preferredHost = 'cdo-vertex.local'
@@ -362,6 +382,7 @@
       success('Autodarts installed successfully')
       await fetchStatus()
       await fetchLogs()
+      syncBoardManagerPolling()
     } catch (error) {
       showError('Failed to install Autodarts: ' + error.message)
     } finally {
@@ -376,6 +397,7 @@
       success('Autodarts updated successfully')
       await fetchStatus()
       await fetchLogs()
+      syncBoardManagerPolling()
     } catch (error) {
       showError('Failed to update Autodarts: ' + error.message)
     } finally {
@@ -405,7 +427,7 @@
     await fetchStatus()
     if (status.value?.installed) await fetchLogs()
     await fetchDeviceIp()
-    startBoardManagerPolling()
+    syncBoardManagerPolling()
   })
 
   onUnmounted(() => {

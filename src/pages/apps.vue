@@ -96,6 +96,15 @@
     return 'neutral'
   })
 
+  function isAutodartsUnavailableError (error) {
+    const message = String(error?.message || '').toLowerCase()
+    return error?.status === 404
+      || error?.status === 503
+      || message.includes('not running')
+      || message.includes('not installed')
+      || message.includes('not found')
+  }
+
   function normalizeState (value) {
     const raw = String(value || '').toLowerCase()
     if (!raw) return ''
@@ -142,14 +151,27 @@
     try {
       const response = await getAutodartsStatus()
       autodartsStatus.value = response.data
+      return !!autodartsStatus.value?.installed
     } catch (error) {
+      if (isAutodartsUnavailableError(error)) {
+        autodartsStatus.value = { installed: false, active: false }
+        stopAppsStatusPolling()
+        stopBoardManagerPolling()
+        return false
+      }
       showError('Failed to load app status: ' + error.message)
+      return false
     }
   }
 
-  function startAppsStatusPolling () {
+  async function startAppsStatusPolling () {
     if (appsStatusIntervalId) return
-    fetchAppsStatus()
+    const isInstalled = await fetchAppsStatus()
+    if (!isInstalled) {
+      stopBoardManagerPolling()
+      return
+    }
+    startBoardManagerPolling()
     appsStatusIntervalId = setInterval(fetchAppsStatus, 1000)
   }
 
@@ -162,8 +184,7 @@
 
   watch(() => route.path, async newPath => {
     if (newPath === '/apps') {
-      startAppsStatusPolling()
-      startBoardManagerPolling()
+      await startAppsStatusPolling()
     } else {
       stopAppsStatusPolling()
       stopBoardManagerPolling()
@@ -172,8 +193,7 @@
 
   onMounted(async () => {
     if (isOverviewRoute.value) {
-      startAppsStatusPolling()
-      startBoardManagerPolling()
+      await startAppsStatusPolling()
     }
   })
 
