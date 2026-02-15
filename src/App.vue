@@ -75,6 +75,31 @@
           </div>
         </div>
       </template>
+      <template #append>
+        <v-menu location="bottom end">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              class="mr-2"
+              color="error"
+              icon="mdi-power"
+              variant="text"
+            />
+          </template>
+          <v-list density="comfortable">
+            <v-list-item
+              prepend-icon="mdi-restart"
+              title="Restart"
+              @click="handleRestart"
+            />
+            <v-list-item
+              prepend-icon="mdi-power"
+              title="Shutdown"
+              @click="handleShutdown"
+            />
+          </v-list>
+        </v-menu>
+      </template>
     </v-app-bar>
 
     <v-main>
