@@ -147,7 +147,7 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useTheme } from 'vuetify'
   import GlassCard from '@/components/GlassCard.vue'
   import { useToast } from '@/composables/useToast'

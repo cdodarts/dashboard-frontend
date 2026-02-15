@@ -1,0 +1,1 @@
+import{d as s,j as t,bD as r,n}from"./index-Dv_JTtX6.js";const c={__name:"StatusBadge",props:{variant:{type:String,default:"neutral",validator:a=>["success","warning","error","info","neutral"].includes(a)}},setup(a){return(e,l)=>(s(),t("span",{class:n(["status-badge",`badge-${a.variant}`])},[r(e.$slots,"default")],2))}};export{c as _};
