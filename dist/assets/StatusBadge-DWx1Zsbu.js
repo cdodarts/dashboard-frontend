@@ -1,0 +1,1 @@
+import{e as s,k as t,bC as r,p as n}from"./index-ByZU1jn9.js";const c={__name:"StatusBadge",props:{variant:{type:String,default:"neutral",validator:a=>["success","warning","error","info","neutral"].includes(a)}},setup(a){return(e,l)=>(s(),t("span",{class:n(["status-badge",`badge-${a.variant}`])},[r(e.$slots,"default")],2))}};export{c as _};

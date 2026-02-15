@@ -8,7 +8,7 @@ const rl = readline.createInterface({
   output: process.stdout,
 })
 
-const npmCmd = process.platform === 'win32' ? 'npm' : 'npm'
+const isWindows = process.platform === 'win32'
 const gitCmd = process.platform === 'win32' ? 'git.exe' : 'git'
 
 function run(cmd, args, options = {}) {
@@ -27,20 +27,13 @@ function run(cmd, args, options = {}) {
   }
 }
 
-function runShell(cmd, args, options = {}) {
-  console.log(`> ${cmd} ${args.join(' ')}`)
-  const result = spawnSync(cmd, args, {
-    stdio: 'inherit',
-    shell: true,
-    ...options,
-  })
-
-  if (result.status !== 0) {
-    if (result.error) {
-      console.error('Command failed:', result.error.message)
-    }
-    process.exit(result.status ?? 1)
+function runNpm(args) {
+  if (isWindows) {
+    run('cmd.exe', ['/d', '/s', '/c', 'npm', ...args])
+    return
   }
+
+  run('npm', args)
 }
 
 function runCapture(cmd, args) {
@@ -82,7 +75,7 @@ async function main() {
   rl.close()
 
   console.log('Starting build...')
-  runShell(npmCmd, ['run', 'build'])
+  runNpm(['run', 'build'])
   const distPath = path.resolve('dist')
   const distReady = existsSync(distPath) && readdirSync(distPath).length > 0
   if (!distReady) {
@@ -98,10 +91,10 @@ async function main() {
 
   if (versionInput) {
     console.log(`Bumping version to ${versionInput}...`)
-    runShell(npmCmd, ['version', versionInput])
+    runNpm(['version', versionInput])
   } else {
     console.log('Bumping version (patch)...')
-    runShell(npmCmd, ['version', 'patch'])
+    runNpm(['version', 'patch'])
   }
 
   console.log('Pushing commit and tags...')

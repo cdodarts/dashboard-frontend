@@ -2,7 +2,7 @@
   <v-container class="pa-4 pa-md-6" fluid>
     <div class="mb-6">
       <h1 class="text-h4 text-md-h3 text-primary-high font-weight-bold mb-1">Settings</h1>
-      <p class="text-body-2 text-secondary">Configure theme, notifications, and auto-update behavior</p>
+      <p class="text-body-2 text-secondary">Configure theme and notifications</p>
     </div>
 
     <div v-if="loading && !settings" class="text-center py-16">
@@ -103,65 +103,6 @@
           </glass-card>
         </v-col>
 
-        <v-col cols="12" lg="6">
-          <glass-card elevated>
-            <v-card-title class="text-primary-high d-flex align-center"><v-icon class="mr-2" icon="mdi-update" />Auto-Update Settings</v-card-title>
-            <v-card-text>
-              <v-switch
-                v-model="localSettings.auto_update.enabled"
-                class="mb-6"
-                color="primary"
-                hide-details
-                label="Enable automatic update checks"
-              />
-              <div v-if="localSettings.auto_update.enabled">
-                <div class="mb-6">
-                  <div class="text-body-2 text-primary-medium mb-3">Check Interval (hours)</div>
-                  <v-text-field
-                    v-model.number="localSettings.auto_update.check_interval_hours"
-                    density="comfortable"
-                    hint="How often to check for updates"
-                    :min="1"
-                    persistent-hint
-                    type="number"
-                    variant="outlined"
-                  />
-                </div>
-                <div class="mb-6">
-                  <div class="text-body-2 text-primary-medium mb-3">Preferred Check Time</div>
-                  <v-text-field
-                    v-model="localSettings.auto_update.check_time"
-                    density="comfortable"
-                    hint="Time of day to check for updates (HH:MM)"
-                    persistent-hint
-                    type="time"
-                    variant="outlined"
-                  />
-                </div>
-                <div>
-                  <v-switch v-model="localSettings.auto_update.auto_install" color="warning" hide-details>
-                    <template #label>
-                      <div>
-                        <div class="text-body-2">Automatically install updates</div>
-                        <div class="text-caption text-secondary">Updates will be installed without confirmation</div>
-                      </div>
-                    </template>
-                  </v-switch>
-                  <v-alert
-                    v-if="localSettings.auto_update.auto_install"
-                    class="mt-3"
-                    density="compact"
-                    icon="mdi-alert"
-                    type="warning"
-                    variant="tonal"
-                  >
-                    <div class="text-caption">Warning: Updates will be installed automatically without your confirmation.</div>
-                  </v-alert>
-                </div>
-              </div>
-            </v-card-text>
-          </glass-card>
-        </v-col>
       </v-row>
 
       <glass-card class="mt-6">
@@ -295,8 +236,13 @@
     try {
       applyingUpdate.value = true
       const response = await applyUpdates()
-      if (response.data?.success) success('Update command executed successfully')
-      else showError('Update command failed')
+      const result = response.data || {}
+      if (result.started || result.success) {
+        const jobLabel = result.job_id ? ` (job ${result.job_id})` : ''
+        success(`Update started${jobLabel}. The device will restart when finished.`)
+      } else {
+        showError(result.error || 'Update command failed')
+      }
       await handleCheckUpdates()
     } catch (error) {
       showError('Failed to apply updates: ' + error.message)

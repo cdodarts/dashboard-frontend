@@ -246,8 +246,13 @@
     try {
       applyingUpdate.value = true
       const response = await applyUpdates()
-      if (response.data?.success) success('Update started successfully. Re-open dashboard after device finishes updating.')
-      else showError('Update command failed to start.')
+      const result = response.data || {}
+      if (result.started || result.success) {
+        const jobLabel = result.job_id ? ` (job ${result.job_id})` : ''
+        success(`Update started${jobLabel}. Re-open dashboard after the device finishes updating.`)
+      } else {
+        showError(result.error || 'Update command failed to start.')
+      }
       await fetchUpdates()
     } catch (error_) {
       showError('Failed to apply update: ' + error_.message)

@@ -1,1 +1,0 @@
-import{e as n,k as c,t,p as o}from"./index-DkC98IVe.js";const i={__name:"ConnectionStatus",props:{connected:{type:Boolean,required:!0}},setup(e){return(a,s)=>(n(),c("div",{class:o(["connection-indicator",e.connected?"connected":"disconnected"])},t(e.connected?"Connected":"Disconnected"),3))}};export{i as _};
