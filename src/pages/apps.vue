@@ -60,7 +60,6 @@
   import GlassCard from '@/components/GlassCard.vue'
   import StatusBadge from '@/components/StatusBadge.vue'
   import { useToast } from '@/composables/useToast'
-  import { useConnectivityGate } from '@/composables/useConnectivityGate'
   import { getAutodartsStatus } from '@/services/api'
 
   const route = useRoute()
@@ -73,7 +72,6 @@
   let boardManagerIntervalId = null
   let appsStatusIntervalId = null
   const wsConnected = ref(false)
-  const { pollingEnabled } = useConnectivityGate()
 
   const isOverviewRoute = computed(() => route.path === '/apps')
 
@@ -185,8 +183,8 @@
     }
   }
 
-  watch([() => route.path, pollingEnabled], async ([newPath, enabled]) => {
-    if (newPath === '/apps' && enabled) {
+  watch(() => route.path, async newPath => {
+    if (newPath === '/apps') {
       await startAppsStatusPolling()
     } else {
       stopAppsStatusPolling()
@@ -195,7 +193,7 @@
   })
 
   onMounted(async () => {
-    if (isOverviewRoute.value && pollingEnabled.value) {
+    if (isOverviewRoute.value) {
       await startAppsStatusPolling()
     }
   })

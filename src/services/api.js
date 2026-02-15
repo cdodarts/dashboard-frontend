@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://cdo-vertex.local:5001/api'
+const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://cdo-vertex.local'
 const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '')
 const API_PREFIX = API_BASE_URL.endsWith('/api') ? '' : '/api'
 
@@ -52,50 +52,7 @@ export const getDisk = () => apiClient.get(`${API_PREFIX}/system/disk`)
 export const getTemperature = () => apiClient.get(`${API_PREFIX}/system/temperature`)
 export const getNetwork = () => apiClient.get(`${API_PREFIX}/system/network`)
 export const getWifi = () => apiClient.get(`${API_PREFIX}/system/wifi`)
-
-const WIFI_SCAN_ENDPOINTS = [
-  `${API_PREFIX}/modules/pi-wifi-manager/v1/wifi/scan`,
-  `${API_PREFIX}/system/wifi/networks`,
-]
-
-const WIFI_CONNECT_ENDPOINTS = [
-  `${API_PREFIX}/system/wifi/connect`,
-  `${API_PREFIX}/modules/pi-wifi-manager/v1/wifi/connect`,
-]
-
-export async function scanWifiNetworks () {
-  let lastError = null
-  for (const endpoint of WIFI_SCAN_ENDPOINTS) {
-    try {
-      const response = await apiClient.get(endpoint)
-      return response
-    } catch (error) {
-      lastError = error
-      if (error.message?.includes('404')) {
-        continue
-      }
-      throw error
-    }
-  }
-  throw lastError || new Error('Unable to scan Wi-Fi networks')
-}
-
-export async function connectWifiNetwork (data) {
-  let lastError = null
-  for (const endpoint of WIFI_CONNECT_ENDPOINTS) {
-    try {
-      const response = await apiClient.post(endpoint, data)
-      return response
-    } catch (error) {
-      lastError = error
-      if (error.message?.includes('404')) {
-        continue
-      }
-      throw error
-    }
-  }
-  throw lastError || new Error('Unable to connect to Wi-Fi network')
-}
+export const getConnectivity = () => apiClient.get(`${API_PREFIX}/system/connectivity`)
 
 export const getUptime = () => apiClient.get(`${API_PREFIX}/system/uptime`)
 export const getHostname = () => apiClient.get(`${API_PREFIX}/system/hostname`)

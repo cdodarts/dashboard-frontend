@@ -25,7 +25,6 @@ declare module 'vue-router/auto-routes' {
     '/autodarts': RouteRecordInfo<'/autodarts', '/autodarts', Record<never, never>, Record<never, never>>,
     '/settings': RouteRecordInfo<'/settings', '/settings', Record<never, never>, Record<never, never>>,
     '/status': RouteRecordInfo<'/status', '/status', Record<never, never>, Record<never, never>>,
-    '/wifi-setup': RouteRecordInfo<'/wifi-setup', '/wifi-setup', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -65,10 +64,6 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/status.vue': {
       routes: '/status'
-      views: never
-    }
-    'src/pages/wifi-setup.vue': {
-      routes: '/wifi-setup'
       views: never
     }
   }

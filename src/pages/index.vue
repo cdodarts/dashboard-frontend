@@ -38,7 +38,7 @@
             <div class="text-overline text-secondary">Device summary</div>
             <div class="text-h5 text-primary-high font-weight-bold">{{ systemData?.hostname?.hostname || 'CDO Vertex' }}</div>
             <div class="text-body-2 text-secondary">
-              Uptime {{ formatUptime(systemData?.uptime?.uptime_seconds || 0) }} · API {{ apiVersion || 'n/a' }}
+              Uptime {{ formatUptime(systemData?.uptime?.uptime_seconds || 0) }} · API {{ apiVersion || 'n/a' }} · Dashboard v{{ dashboardVersion }}
             </div>
           </div>
           <div class="d-flex ga-2 flex-wrap">
@@ -76,14 +76,16 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, onMounted, onUnmounted, ref } from 'vue'
   import ConnectionStatus from '@/components/ConnectionStatus.vue'
   import GlassCard from '@/components/GlassCard.vue'
   import { useToast } from '@/composables/useToast'
-  import { useConnectivityGate } from '@/composables/useConnectivityGate'
   import { getHealth, getSystemStatus } from '@/services/api'
+  import packageJson from '../../package.json'
 
   const { error: showError } = useToast()
+
+  const dashboardVersion = packageJson.version
 
   const loading = ref(false)
   const error = ref(null)
@@ -93,7 +95,6 @@
   const lastUpdated = ref('')
   const rawError = ref(null)
   let intervalId = null
-  const { pollingEnabled } = useConnectivityGate()
   const errorDetails = computed(() => {
     if (!rawError.value) return []
     const details = []
@@ -199,32 +200,13 @@
     }
   }
 
-  function stopPolling () {
-    if (intervalId) {
-      clearInterval(intervalId)
-      intervalId = null
-    }
-  }
-
-  function startPolling () {
-    if (!pollingEnabled.value || intervalId) return
-    fetchHealth()
-    fetchData()
+  onMounted(async () => {
+    await fetchHealth()
+    await fetchData()
     intervalId = setInterval(fetchData, 5000)
-  }
-
-  watch(pollingEnabled, enabled => {
-    if (enabled) startPolling()
-    else stopPolling()
-  })
-
-  onMounted(() => {
-    if (pollingEnabled.value) {
-      startPolling()
-    }
   })
 
   onUnmounted(() => {
-    stopPolling()
+    if (intervalId) clearInterval(intervalId)
   })
 </script>

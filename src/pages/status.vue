@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, onMounted, onUnmounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import CpuCard from '@/components/cards/CPUCard.vue'
   import DiskCard from '@/components/cards/DiskCard.vue'
@@ -89,8 +89,7 @@
   import ConnectionStatus from '@/components/ConnectionStatus.vue'
   import GlassCard from '@/components/GlassCard.vue'
   import { useToast } from '@/composables/useToast'
-  import { useConnectivityGate } from '@/composables/useConnectivityGate'
-  import { getHealth, getSystemStatus, getWifi } from '@/services/api'
+  import { getHealth, getSystemStatus } from '@/services/api'
 
   const router = useRouter()
   const { error: showError } = useToast()
@@ -103,9 +102,6 @@
   const lastUpdated = ref('')
   const rawError = ref(null)
   let intervalId = null
-  let wifiIntervalId = null
-  const wifiInfo = ref(null)
-  const { pollingEnabled } = useConnectivityGate()
 
   const errorDetails = computed(() => {
     if (!rawError.value) return []
@@ -116,14 +112,7 @@
     return details
   })
 
-  const enrichedWifiData = computed(() => {
-    // Use the dedicated wifi endpoint response which has accurate signal strength
-    if (wifiInfo.value) {
-      return wifiInfo.value
-    }
-    // Fallback to systemData if wifi endpoint hasn't been called yet
-    return systemData.value?.wifi || null
-  })
+  const enrichedWifiData = computed(() => systemData.value?.wifi || null)
 
   async function fetchData () {
     try {
@@ -156,56 +145,14 @@
     }
   }
 
-  async function fetchWifiInfo () {
-    try {
-      const response = await getWifi()
-      wifiInfo.value = response.data
-    } catch {
-      // Silently fail
-    }
-  }
 
-  function startWifiPolling () {
-    if (wifiIntervalId) return
-    fetchWifiInfo()
-    wifiIntervalId = setInterval(fetchWifiInfo, 5000)
-  }
-
-  function stopWifiPolling () {
-    if (wifiIntervalId) {
-      clearInterval(wifiIntervalId)
-      wifiIntervalId = null
-    }
-  }
-
-  function stopPolling () {
-    if (intervalId) {
-      clearInterval(intervalId)
-      intervalId = null
-    }
-    stopWifiPolling()
-  }
-
-  function startPolling () {
-    if (!pollingEnabled.value || intervalId) return
-    fetchHealth()
-    fetchData()
-    startWifiPolling()
+  onMounted(async () => {
+    await fetchHealth()
+    await fetchData()
     intervalId = setInterval(fetchData, 5000)
-  }
-
-  watch(pollingEnabled, enabled => {
-    if (enabled) startPolling()
-    else stopPolling()
-  })
-
-  onMounted(() => {
-    if (pollingEnabled.value) {
-      startPolling()
-    }
   })
 
   onUnmounted(() => {
-    stopPolling()
+    if (intervalId) clearInterval(intervalId)
   })
 </script>

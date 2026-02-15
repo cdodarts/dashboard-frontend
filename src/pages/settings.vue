@@ -52,15 +52,12 @@
 
           <glass-card>
             <v-card-title class="text-primary-high d-flex align-center">
-              <v-icon class="mr-2" icon="mdi-wifi" />Wi-Fi Setup
+              <v-icon class="mr-2" icon="mdi-wifi" />Network Setup
             </v-card-title>
             <v-card-text>
-              <p class="text-body-2 text-secondary mb-4">
-                Configure Wi-Fi using the dedicated setup flow.
+              <p class="text-body-2 text-secondary mb-0">
+                Network onboarding is now handled by the backend host flow before the dashboard loads.
               </p>
-              <v-btn color="primary" prepend-icon="mdi-wifi-cog" @click="router.push('/wifi-setup')">
-                Open Wi-Fi Setup
-              </v-btn>
             </v-card-text>
           </glass-card>
         </v-col>
@@ -109,6 +106,16 @@
                       </div>
                     </template>
                   </v-switch>
+                  <v-alert
+                    v-if="localSettings.auto_update.auto_install"
+                    class="mt-3"
+                    density="compact"
+                    icon="mdi-alert"
+                    type="warning"
+                    variant="tonal"
+                  >
+                    <div class="text-caption">Warning: Updates will be installed automatically without your confirmation.</div>
+                  </v-alert>
                 </div>
               </div>
             </v-card-text>
@@ -144,13 +151,11 @@
 
 <script setup>
   import { computed, onMounted, ref, watch } from 'vue'
-  import { useRouter } from 'vue-router'
   import { useTheme } from 'vuetify'
   import GlassCard from '@/components/GlassCard.vue'
   import { useToast } from '@/composables/useToast'
   import { getSettings, resetSettings, updateSettings } from '@/services/api'
 
-  const router = useRouter()
   const { success, error: showError } = useToast()
   const theme = useTheme()
 
