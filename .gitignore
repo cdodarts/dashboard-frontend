@@ -1,5 +1,6 @@
 .DS_Store
 node_modules
+typed-router.d.ts
 
 
 # local env files
