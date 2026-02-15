@@ -150,4 +150,8 @@ export function applyUpdates () {
   return apiClient.post(`${API_PREFIX}/updates/apply`)
 }
 
+export function getUpdateStatus (jobId) {
+  return apiClient.get(`${API_PREFIX}/updates/status/${jobId}`)
+}
+
 export default apiClient

@@ -128,6 +128,21 @@
         </v-card-text>
       </glass-card>
     </div>
+
+    <v-dialog v-model="showUpdateDialog" persistent max-width="460">
+      <v-card class="dialog">
+        <v-card-text class="dialog__body">
+          <v-progress-circular indeterminate size="56" width="5" color="primary" />
+          <div>
+            <h3>Updating device</h3>
+            <p>{{ updateStatusText }}</p>
+            <p v-if="updateJobId" class="text-caption">Job {{ updateJobId }}</p>
+            <p v-if="updateLogPath" class="text-caption">Log: {{ updateLogPath }}</p>
+            <p v-if="updateFailed" class="text-caption text-error">{{ updateError }}</p>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -136,7 +151,7 @@
   import { useTheme } from 'vuetify'
   import GlassCard from '@/components/GlassCard.vue'
   import { useToast } from '@/composables/useToast'
-  import { applyUpdates, checkUpdates, getSettings, resetSettings, updateSettings } from '@/services/api'
+  import { applyUpdates, checkUpdates, getSettings, resetSettings, updateSettings, getUpdateStatus } from '@/services/api'
 
   const { success, error: showError } = useToast()
   const theme = useTheme()
@@ -148,6 +163,14 @@
   const checkingUpdates = ref(false)
   const applyingUpdate = ref(false)
   const updateResult = ref(null)
+  const showUpdateDialog = ref(false)
+  const updateStatusText = ref('Starting update...')
+  const updateJobId = ref(null)
+  const updateLogPath = ref('')
+  const updateFailed = ref(false)
+  const updateError = ref('')
+  let updatePollTimer = null
+  const UPDATE_POLL_MS = 3000
 
   const localSettings = ref({
     auto_update: { enabled: false, check_interval_hours: 24, check_time: '03:00', auto_install: false },
@@ -238,8 +261,16 @@
       const response = await applyUpdates()
       const result = response.data || {}
       if (result.started || result.success) {
-        const jobLabel = result.job_id ? ` (job ${result.job_id})` : ''
-        success(`Update started${jobLabel}. The device will restart when finished.`)
+        updateJobId.value = result.job_id || null
+        updateLogPath.value = result.log_path || ''
+        updateStatusText.value = 'Applying update. Please keep this page open.'
+        updateFailed.value = false
+        updateError.value = ''
+        showUpdateDialog.value = true
+        if (updateJobId.value) {
+          await pollUpdateStatus(updateJobId.value)
+        }
+        success('Update started. The device will restart when finished.')
       } else {
         showError(result.error || 'Update command failed')
       }
@@ -272,7 +303,54 @@
     await fetchSettings()
     await handleCheckUpdates()
   })
+
+  onUnmounted(() => {
+    if (updatePollTimer) clearTimeout(updatePollTimer)
+  })
+
+  async function pollUpdateStatus (jobId) {
+    if (!jobId) return
+
+    const poll = async () => {
+      try {
+        const response = await getUpdateStatus(jobId)
+        const status = response.data || {}
+        updateStatusText.value = status.running ? 'Installing update...' : 'Finalizing update...'
+        if (status.finished) {
+          if (status.success === false || status.error) {
+            updateFailed.value = true
+            updateError.value = status.error || 'Update failed. Check the log for details.'
+            return
+          }
+          showUpdateDialog.value = false
+          window.location.reload()
+          return
+        }
+      } catch {
+        updateStatusText.value = 'Waiting for the device to respond...'
+      }
+
+      updatePollTimer = setTimeout(poll, UPDATE_POLL_MS)
+    }
+
+    if (updatePollTimer) clearTimeout(updatePollTimer)
+    updatePollTimer = setTimeout(poll, 0)
+  }
 </script>
+
+<style scoped>
+.dialog {
+  border-radius: 18px;
+  background: #121620;
+  color: rgba(246, 247, 249, 0.98);
+}
+
+.dialog__body {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+</style>
 
 <style scoped>
 .flex-1-1 { flex: 1 1 0; }
