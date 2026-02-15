@@ -53,6 +53,8 @@ export const getTemperature = () => apiClient.get(`${API_PREFIX}/system/temperat
 export const getNetwork = () => apiClient.get(`${API_PREFIX}/system/network`)
 export const getWifi = () => apiClient.get(`${API_PREFIX}/system/wifi`)
 export const getConnectivity = () => apiClient.get(`${API_PREFIX}/system/connectivity`)
+export const rebootSystem = () => apiClient.post(`${API_PREFIX}/system/reboot`)
+export const shutdownSystem = () => apiClient.post(`${API_PREFIX}/system/shutdown`)
 
 export const getUptime = () => apiClient.get(`${API_PREFIX}/system/uptime`)
 export const getHostname = () => apiClient.get(`${API_PREFIX}/system/hostname`)

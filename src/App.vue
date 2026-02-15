@@ -33,6 +33,30 @@
           <v-tab prepend-icon="mdi-apps" value="/apps" @click="navigate('/apps')">Apps</v-tab>
           <v-tab prepend-icon="mdi-cog" value="/settings" @click="navigate('/settings')">Settings</v-tab>
         </v-tabs>
+
+        <v-menu location="bottom end">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              class="mr-4"
+              color="error"
+              icon="mdi-power"
+              variant="text"
+            />
+          </template>
+          <v-list density="comfortable">
+            <v-list-item
+              prepend-icon="mdi-restart"
+              title="Restart"
+              @click="handleRestart"
+            />
+            <v-list-item
+              prepend-icon="mdi-power"
+              title="Shutdown"
+              @click="handleShutdown"
+            />
+          </v-list>
+        </v-menu>
       </template>
     </v-app-bar>
 
@@ -88,13 +112,38 @@
     </v-bottom-navigation>
 
     <toast-container />
+
+    <v-dialog v-model="showRestartDialog" persistent max-width="460">
+      <v-card class="power-dialog">
+        <v-card-text class="power-dialog__body">
+          <v-progress-circular indeterminate size="56" width="5" color="error" />
+          <div>
+            <h3>Restarting device</h3>
+            <p>{{ restartStatusText }}</p>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="showShutdownDialog" persistent max-width="460">
+      <v-card class="power-dialog">
+        <v-card-text class="power-dialog__body">
+          <v-progress-circular indeterminate size="56" width="5" color="error" />
+          <div>
+            <h3>Shutting down</h3>
+            <p>The device is powering off. You will need to turn it back on manually.</p>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
 <script setup>
-  import { onMounted, ref, watch } from 'vue'
+  import { onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useDisplay } from 'vuetify'
+  import { getHealth, rebootSystem, shutdownSystem } from '@/services/api'
   import SystemStatusBar from '@/components/SystemStatusBar.vue'
   import ToastContainer from '@/components/ToastContainer.vue'
 
@@ -103,6 +152,11 @@
   const { mobile } = useDisplay()
 
   const currentTab = ref('/')
+  const showRestartDialog = ref(false)
+  const showShutdownDialog = ref(false)
+  const restartStatusText = ref('Restarting now. Please keep this page open.')
+  let restartPollTimer = null
+  const RESTART_POLL_MS = 3000
 
   function getNavigationTab (path) {
     if (path.startsWith('/apps')) return '/apps'
@@ -128,6 +182,51 @@
   onMounted(() => {
     currentTab.value = getNavigationTab(route.path)
   })
+
+  onUnmounted(() => {
+    if (restartPollTimer) clearTimeout(restartPollTimer)
+  })
+
+  async function handleRestart () {
+    if (!confirm('Restart the device now?')) return
+    try {
+      showRestartDialog.value = true
+      restartStatusText.value = 'Restarting now. Please keep this page open.'
+      await rebootSystem()
+      await pollForReconnect()
+    } catch (error) {
+      restartStatusText.value = error?.message || 'Failed to send restart command.'
+    }
+  }
+
+  async function handleShutdown () {
+    if (!confirm('Shut down the device now?')) return
+    try {
+      showShutdownDialog.value = true
+      await shutdownSystem()
+    } catch (error) {
+      showShutdownDialog.value = false
+      alert(error?.message || 'Failed to send shutdown command.')
+    }
+  }
+
+  async function pollForReconnect () {
+    const poll = async () => {
+      try {
+        await getHealth()
+        showRestartDialog.value = false
+        window.location.reload()
+        return
+      } catch {
+        restartStatusText.value = 'Waiting for the device to come back online...'
+      }
+
+      restartPollTimer = setTimeout(poll, RESTART_POLL_MS)
+    }
+
+    if (restartPollTimer) clearTimeout(restartPollTimer)
+    restartPollTimer = setTimeout(poll, RESTART_POLL_MS)
+  }
 </script>
 
 <style>
@@ -160,5 +259,17 @@
 
 .v-main ::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--app-text-muted) 65%, transparent);
+}
+
+.power-dialog {
+  border-radius: 18px;
+  background: #121620;
+  color: rgba(246, 247, 249, 0.98);
+}
+
+.power-dialog__body {
+  display: flex;
+  gap: 16px;
+  align-items: center;
 }
 </style>
