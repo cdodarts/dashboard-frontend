@@ -133,4 +133,21 @@ export function resetSettings () {
   return apiClient.post(`${API_PREFIX}/settings/reset`)
 }
 
+// ========== Dashboard Updates ==========
+export function getUpdates (maxAgeMinutes) {
+  const params = {}
+  if (typeof maxAgeMinutes === 'number') {
+    params.max_age_minutes = maxAgeMinutes
+  }
+  return apiClient.get(`${API_PREFIX}/updates`, { params })
+}
+
+export function checkUpdates () {
+  return apiClient.post(`${API_PREFIX}/updates/check`)
+}
+
+export function applyUpdates () {
+  return apiClient.post(`${API_PREFIX}/updates/apply`)
+}
+
 export default apiClient

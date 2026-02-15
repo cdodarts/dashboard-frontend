@@ -60,6 +60,47 @@
               </p>
             </v-card-text>
           </glass-card>
+
+          <glass-card class="mt-4">
+            <v-card-title class="text-primary-high d-flex align-center">
+              <v-icon class="mr-2" icon="mdi-update" />Check for Updates
+            </v-card-title>
+            <v-card-text>
+              <div class="d-flex flex-column ga-3">
+                <p class="text-body-2 text-secondary mb-0">Use this to check for software updates and apply them manually.</p>
+                <div class="d-flex flex-wrap ga-2">
+                  <v-btn
+                    color="primary"
+                    :disabled="checkingUpdates || applyingUpdate"
+                    :loading="checkingUpdates"
+                    prepend-icon="mdi-refresh"
+                    variant="outlined"
+                    @click="handleCheckUpdates"
+                  >Check for updates</v-btn>
+                  <v-btn
+                    v-if="hasUpdateAvailable"
+                    color="warning"
+                    :disabled="checkingUpdates || applyingUpdate"
+                    :loading="applyingUpdate"
+                    prepend-icon="mdi-download"
+                    @click="handleApplyUpdate"
+                  >Update now</v-btn>
+                </div>
+
+                <v-alert
+                  v-if="updateStatus"
+                  density="comfortable"
+                  :type="updateStatus.type"
+                  variant="tonal"
+                >
+                  <div class="text-body-2">{{ updateStatus.message }}</div>
+                  <div v-if="hasUpdateAvailable" class="text-caption mt-1">
+                    {{ updateDetails }}
+                  </div>
+                </v-alert>
+              </div>
+            </v-card-text>
+          </glass-card>
         </v-col>
 
         <v-col cols="12" lg="6">
@@ -154,7 +195,7 @@
   import { useTheme } from 'vuetify'
   import GlassCard from '@/components/GlassCard.vue'
   import { useToast } from '@/composables/useToast'
-  import { getSettings, resetSettings, updateSettings } from '@/services/api'
+  import { applyUpdates, checkUpdates, getSettings, resetSettings, updateSettings } from '@/services/api'
 
   const { success, error: showError } = useToast()
   const theme = useTheme()
@@ -163,6 +204,9 @@
   const saving = ref(false)
   const resetting = ref(false)
   const settings = ref(null)
+  const checkingUpdates = ref(false)
+  const applyingUpdate = ref(false)
+  const updateResult = ref(null)
 
   const localSettings = ref({
     auto_update: { enabled: false, check_interval_hours: 24, check_time: '03:00', auto_install: false },
@@ -183,6 +227,22 @@
   const hasChanges = computed(() => {
     if (!settings.value) return false
     return JSON.stringify(settings.value) !== JSON.stringify(localSettings.value)
+  })
+
+  const hasUpdateAvailable = computed(() => (updateResult.value?.components || []).some(component => component.update_available))
+
+  const updateDetails = computed(() => {
+    const component = (updateResult.value?.components || []).find(item => item.update_available)
+    if (!component) return ''
+    return `${component.name}: ${component.current_version} → ${component.latest_version}`
+  })
+
+  const updateStatus = computed(() => {
+    if (!updateResult.value) return null
+    if (hasUpdateAvailable.value) {
+      return { type: 'warning', message: 'Update available. Click "Update now" to install.' }
+    }
+    return { type: 'success', message: 'Device is up to date.' }
   })
 
   async function fetchSettings () {
@@ -217,6 +277,34 @@
     }
   }
 
+  async function handleCheckUpdates () {
+    try {
+      checkingUpdates.value = true
+      const response = await checkUpdates()
+      updateResult.value = response.data
+      if (hasUpdateAvailable.value) success('Update available')
+      else success('Device is up to date')
+    } catch (error) {
+      showError('Failed to check for updates: ' + error.message)
+    } finally {
+      checkingUpdates.value = false
+    }
+  }
+
+  async function handleApplyUpdate () {
+    try {
+      applyingUpdate.value = true
+      const response = await applyUpdates()
+      if (response.data?.success) success('Update command executed successfully')
+      else showError('Update command failed')
+      await handleCheckUpdates()
+    } catch (error) {
+      showError('Failed to apply updates: ' + error.message)
+    } finally {
+      applyingUpdate.value = false
+    }
+  }
+
   async function handleReset () {
     if (!confirm('Are you sure you want to reset all settings to defaults?')) return
     try {
@@ -236,6 +324,7 @@
 
   onMounted(async () => {
     await fetchSettings()
+    await handleCheckUpdates()
   })
 </script>
 

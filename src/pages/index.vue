@@ -8,6 +8,31 @@
       <connection-status :connected="isConnected" />
     </div>
 
+    <v-alert
+      v-if="updateData?.components?.length"
+      class="mb-4"
+      color="warning"
+      icon="mdi-update"
+      type="warning"
+      variant="tonal"
+    >
+      <div class="d-flex flex-column flex-md-row justify-space-between align-start align-md-center ga-3">
+        <div>
+          <div class="text-subtitle-1 font-weight-bold">Update available</div>
+          <div class="text-body-2">
+            {{ updateSummary }}
+          </div>
+        </div>
+        <v-btn
+          color="warning"
+          :disabled="applyingUpdate"
+          :loading="applyingUpdate"
+          prepend-icon="mdi-download"
+          @click="handleApplyUpdate"
+        >Update now</v-btn>
+      </div>
+    </v-alert>
+
     <div v-if="loading && !systemData" class="text-center py-16">
       <v-progress-circular color="primary" indeterminate size="64" />
       <div class="text-body-1 text-secondary mt-4">Loading dashboard...</div>
@@ -23,7 +48,7 @@
     >
       <div class="text-h6 mb-2">Connection Error</div>
       <div class="text-body-2">{{ error }}</div>
-      <div v-if="errorDetails.length" class="text-caption text-secondary mt-2">
+      <div v-if="errorDetails.length > 0" class="text-caption text-secondary mt-2">
         <div v-for="(detail, index) in errorDetails" :key="index">{{ detail }}</div>
       </div>
       <template #append>
@@ -80,10 +105,10 @@
   import ConnectionStatus from '@/components/ConnectionStatus.vue'
   import GlassCard from '@/components/GlassCard.vue'
   import { useToast } from '@/composables/useToast'
-  import { getHealth, getSystemStatus } from '@/services/api'
+  import { applyUpdates, getHealth, getSystemStatus, getUpdates } from '@/services/api'
   import packageJson from '../../package.json'
 
-  const { error: showError } = useToast()
+  const { success, error: showError } = useToast()
 
   const dashboardVersion = packageJson.version
 
@@ -94,6 +119,8 @@
   const apiVersion = ref('')
   const lastUpdated = ref('')
   const rawError = ref(null)
+  const updateData = ref(null)
+  const applyingUpdate = ref(false)
   let intervalId = null
   const errorDetails = computed(() => {
     if (!rawError.value) return []
@@ -104,6 +131,11 @@
     return details
   })
 
+  const updateSummary = computed(() => {
+    const firstComponent = updateData.value?.components?.[0]
+    if (!firstComponent) return 'A system update is available.'
+    return `${firstComponent.name}: ${firstComponent.current_version} → ${firstComponent.latest_version}`
+  })
 
   const TEMP_NORMAL_MAX = 60
   const TEMP_MODERATE_MAX = 70
@@ -200,10 +232,38 @@
     }
   }
 
+  async function fetchUpdates () {
+    try {
+      const response = await getUpdates()
+      const components = response.data?.components || []
+      updateData.value = components.some(component => component.update_available) ? response.data : null
+    } catch {
+      updateData.value = null
+    }
+  }
+
+  async function handleApplyUpdate () {
+    try {
+      applyingUpdate.value = true
+      const response = await applyUpdates()
+      if (response.data?.success) success('Update started successfully. Re-open dashboard after device finishes updating.')
+      else showError('Update command failed to start.')
+      await fetchUpdates()
+    } catch (error_) {
+      showError('Failed to apply update: ' + error_.message)
+    } finally {
+      applyingUpdate.value = false
+    }
+  }
+
   onMounted(async () => {
     await fetchHealth()
     await fetchData()
-    intervalId = setInterval(fetchData, 5000)
+    await fetchUpdates()
+    intervalId = setInterval(() => {
+      fetchData()
+      fetchUpdates()
+    }, 5000)
   })
 
   onUnmounted(() => {
