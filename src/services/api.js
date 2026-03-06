@@ -1,159 +1,211 @@
-import axios from 'axios'
+import axios from "axios";
 
-const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://cdo-vertex.local'
-const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '')
-const API_PREFIX = API_BASE_URL.endsWith('/api') ? '' : '/api'
+const RAW_API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://cdo-vertex.local";
+const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, "");
+const API_PREFIX = API_BASE_URL.endsWith("/api") ? "" : "/api";
 
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15_000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-})
+});
 
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
-  response => response,
-  error => {
-    const errorMessage = error.response?.data?.error || error.message || 'An unknown error occurred'
-    const status = error.response?.status
-    const baseUrl = error.config?.baseURL || ''
-    const requestPath = error.config?.url || ''
-    const requestUrl = `${baseUrl}${requestPath}`
+  (response) => response,
+  (error) => {
+    const errorMessage =
+      error.response?.data?.error ||
+      error.message ||
+      "An unknown error occurred";
+    const status = error.response?.status;
+    const baseUrl = error.config?.baseURL || "";
+    const requestPath = error.config?.url || "";
+    const requestUrl = `${baseUrl}${requestPath}`;
 
-    console.error('API request failed', {
+    console.error("API request failed", {
       message: errorMessage,
       status,
       code: error.code,
       url: requestUrl,
       method: error.config?.method,
       timeout: error.config?.timeout,
-    })
+    });
 
-    const wrappedError = new Error(errorMessage)
-    wrappedError.status = status
-    wrappedError.code = error.code
-    wrappedError.requestUrl = requestUrl
-    wrappedError.raw = error
-    return Promise.reject(wrappedError)
+    const wrappedError = new Error(errorMessage);
+    wrappedError.status = status;
+    wrappedError.code = error.code;
+    wrappedError.requestUrl = requestUrl;
+    wrappedError.raw = error;
+    return Promise.reject(wrappedError);
   },
-)
+);
 
 // ========== Health Check ==========
-export const getHealth = () => apiClient.get(`${API_PREFIX}/health`)
+export const getHealth = () => apiClient.get(`${API_PREFIX}/health`);
 
 // ========== System Monitoring ==========
-export const getSystemStatus = () => apiClient.get(`${API_PREFIX}/system/status`)
-export const getCPU = () => apiClient.get(`${API_PREFIX}/system/cpu`)
-export const getMemory = () => apiClient.get(`${API_PREFIX}/system/memory`)
-export const getDisk = () => apiClient.get(`${API_PREFIX}/system/disk`)
-export const getTemperature = () => apiClient.get(`${API_PREFIX}/system/temperature`)
-export const getNetwork = () => apiClient.get(`${API_PREFIX}/system/network`)
-export const getWifi = () => apiClient.get(`${API_PREFIX}/system/wifi`)
-export const getConnectivity = () => apiClient.get(`${API_PREFIX}/system/connectivity`)
-export const rebootSystem = () => apiClient.post(`${API_PREFIX}/system/reboot`)
-export const shutdownSystem = () => apiClient.post(`${API_PREFIX}/system/shutdown`)
+export const getSystemStatus = () =>
+  apiClient.get(`${API_PREFIX}/system/status`);
+export const getCPU = () => apiClient.get(`${API_PREFIX}/system/cpu`);
+export const getMemory = () => apiClient.get(`${API_PREFIX}/system/memory`);
+export const getDisk = () => apiClient.get(`${API_PREFIX}/system/disk`);
+export const getTemperature = () =>
+  apiClient.get(`${API_PREFIX}/system/temperature`);
+export const getNetwork = () => apiClient.get(`${API_PREFIX}/system/network`);
+export const getWifi = () => apiClient.get(`${API_PREFIX}/system/wifi`);
+export const getConnectivity = () =>
+  apiClient.get(`${API_PREFIX}/system/connectivity`);
+export const rebootSystem = () => apiClient.post(`${API_PREFIX}/system/reboot`);
+export const shutdownSystem = () =>
+  apiClient.post(`${API_PREFIX}/system/shutdown`);
 
-export const getUptime = () => apiClient.get(`${API_PREFIX}/system/uptime`)
-export const getHostname = () => apiClient.get(`${API_PREFIX}/system/hostname`)
+export const getUptime = () => apiClient.get(`${API_PREFIX}/system/uptime`);
+export const getHostname = () => apiClient.get(`${API_PREFIX}/system/hostname`);
 
 // ========== Autodarts Management ==========
-export const getAutodartsStatus = () => apiClient.get(`${API_PREFIX}/autodarts/status`)
+export const getAutodartsStatus = () =>
+  apiClient.get(`${API_PREFIX}/autodarts/status`);
 
-export function installAutodarts (data = {}) {
-  return apiClient.post(`${API_PREFIX}/autodarts/install`, data)
+export function installAutodarts(data = {}) {
+  return apiClient.post(`${API_PREFIX}/autodarts/install`, data);
 }
 
-export function updateAutodarts (data = {}) {
-  return apiClient.post(`${API_PREFIX}/autodarts/update`, data)
+export function updateAutodarts(data = {}) {
+  return apiClient.post(`${API_PREFIX}/autodarts/update`, data);
 }
 
-export function checkAutodartsUpdate () {
-  return apiClient.get(`${API_PREFIX}/autodarts/check-update`)
+export function checkAutodartsUpdate() {
+  return apiClient.get(`${API_PREFIX}/autodarts/check-update`);
 }
 
-export function startAutodartsService () {
-  return apiClient.post(`${API_PREFIX}/autodarts/service/start`)
+export function startAutodartsService() {
+  return apiClient.post(`${API_PREFIX}/autodarts/service/start`);
 }
 
-export function stopAutodartsService () {
-  return apiClient.post(`${API_PREFIX}/autodarts/service/stop`)
+export function stopAutodartsService() {
+  return apiClient.post(`${API_PREFIX}/autodarts/service/stop`);
 }
 
-export function restartAutodartsService () {
-  return apiClient.post(`${API_PREFIX}/autodarts/service/restart`)
+export function restartAutodartsService() {
+  return apiClient.post(`${API_PREFIX}/autodarts/service/restart`);
 }
 
-export function getAutodartsLogs (lines = 50) {
-  return apiClient.get(`${API_PREFIX}/autodarts/logs`, { params: { lines } })
+export function getAutodartsLogs(lines = 50) {
+  return apiClient.get(`${API_PREFIX}/autodarts/logs`, { params: { lines } });
+}
+
+// ========== Vertex Bridge ==========
+export function getBridgeStatus() {
+  return apiClient.get(`${API_PREFIX}/bridge/status`);
+}
+
+export function installVertexBridge(data = {}) {
+  return apiClient.post(`${API_PREFIX}/apps/vertex-bridge/install`, data);
+}
+
+export function getAppJobStatus(jobId) {
+  return apiClient.get(`${API_PREFIX}/apps/jobs/${jobId}`);
+}
+
+export function getAppJobLog(jobId, lines = 200) {
+  return apiClient.get(`${API_PREFIX}/apps/jobs/${jobId}/log`, {
+    params: { lines },
+  });
+}
+
+export function startBridgeService() {
+  return apiClient.post(`${API_PREFIX}/bridge/service/start`);
+}
+
+export function stopBridgeService() {
+  return apiClient.post(`${API_PREFIX}/bridge/service/stop`);
+}
+
+export function restartBridgeService() {
+  return apiClient.post(`${API_PREFIX}/bridge/service/restart`);
+}
+
+export function getBridgeLogs(lines = 200) {
+  return apiClient.get(`${API_PREFIX}/bridge/logs`, { params: { lines } });
+}
+
+export function getModules() {
+  return apiClient.get(`${API_PREFIX}/modules`);
+}
+
+export function getModuleHealth(moduleName) {
+  return apiClient.get(`${API_PREFIX}/modules/${moduleName}/health`);
 }
 
 // ========== Camera Management ==========
 const CAMERA_PLACEHOLDER_FEEDS = [
   {
-    id: 'camera-1',
-    name: 'Camera 1',
+    id: "camera-1",
+    name: "Camera 1",
     active: false,
-    feed_url: 'https://placehold.co/1280x720/111827/94a3b8?text=Camera+1+Feed',
+    feed_url: "https://placehold.co/1280x720/111827/94a3b8?text=Camera+1+Feed",
   },
-]
+];
 
-export async function getCameras () {
+export async function getCameras() {
   try {
-    return await apiClient.get(`${API_PREFIX}/cameras`)
+    return await apiClient.get(`${API_PREFIX}/cameras`);
   } catch {
-    return { data: { cameras: CAMERA_PLACEHOLDER_FEEDS } }
+    return { data: { cameras: CAMERA_PLACEHOLDER_FEEDS } };
   }
 }
 
-export function startCameras () {
-  return apiClient.post(`${API_PREFIX}/cameras/start`)
+export function startCameras() {
+  return apiClient.post(`${API_PREFIX}/cameras/start`);
 }
 
-export function stopCameras () {
-  return apiClient.post(`${API_PREFIX}/cameras/stop`)
+export function stopCameras() {
+  return apiClient.post(`${API_PREFIX}/cameras/stop`);
 }
 
 // ========== Settings ==========
-export const getSettings = () => apiClient.get(`${API_PREFIX}/settings`)
+export const getSettings = () => apiClient.get(`${API_PREFIX}/settings`);
 
-export function updateSettings (data) {
-  return apiClient.post(`${API_PREFIX}/settings`, data)
+export function updateSettings(data) {
+  return apiClient.post(`${API_PREFIX}/settings`, data);
 }
 
-export function getAutoUpdateSettings () {
-  return apiClient.get(`${API_PREFIX}/settings/auto-update`)
+export function getAutoUpdateSettings() {
+  return apiClient.get(`${API_PREFIX}/settings/auto-update`);
 }
 
-export function updateAutoUpdateSettings (data) {
-  return apiClient.post(`${API_PREFIX}/settings/auto-update`, data)
+export function updateAutoUpdateSettings(data) {
+  return apiClient.post(`${API_PREFIX}/settings/auto-update`, data);
 }
 
-export function resetSettings () {
-  return apiClient.post(`${API_PREFIX}/settings/reset`)
+export function resetSettings() {
+  return apiClient.post(`${API_PREFIX}/settings/reset`);
 }
 
 // ========== Dashboard Updates ==========
-export function getUpdates (maxAgeMinutes) {
-  const params = {}
-  if (typeof maxAgeMinutes === 'number') {
-    params.max_age_minutes = maxAgeMinutes
+export function getUpdates(maxAgeMinutes) {
+  const params = {};
+  if (typeof maxAgeMinutes === "number") {
+    params.max_age_minutes = maxAgeMinutes;
   }
-  return apiClient.get(`${API_PREFIX}/updates`, { params })
+  return apiClient.get(`${API_PREFIX}/updates`, { params });
 }
 
-export function checkUpdates () {
-  return apiClient.post(`${API_PREFIX}/updates/check`)
+export function checkUpdates() {
+  return apiClient.post(`${API_PREFIX}/updates/check`);
 }
 
-export function applyUpdates () {
-  return apiClient.post(`${API_PREFIX}/updates/apply`)
+export function applyUpdates() {
+  return apiClient.post(`${API_PREFIX}/updates/apply`);
 }
 
-export function getUpdateStatus (jobId) {
-  return apiClient.get(`${API_PREFIX}/updates/status/${jobId}`)
+export function getUpdateStatus(jobId) {
+  return apiClient.get(`${API_PREFIX}/updates/status/${jobId}`);
 }
 
-export default apiClient
+export default apiClient;
