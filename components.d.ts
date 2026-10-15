@@ -15,7 +15,6 @@ declare module 'vue' {
     AutodartsQuickCard: typeof import('./src/components/cards/AutodartsQuickCard.vue')['default']
     ConnectionStatus: typeof import('./src/components/ConnectionStatus.vue')['default']
     CPUCard: typeof import('./src/components/cards/CPUCard.vue')['default']
-    DetectorProviderCard: typeof import('./src/components/cards/DetectorProviderCard.vue')['default']
     DiskCard: typeof import('./src/components/cards/DiskCard.vue')['default']
     GlassCard: typeof import('./src/components/GlassCard.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
