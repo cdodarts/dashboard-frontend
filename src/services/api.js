@@ -1,7 +1,7 @@
 ﻿import axios from "axios";
 
 const RAW_API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://cdo-vertex.local";
+  import.meta.env.VITE_API_BASE_URL || window.location.origin;
 const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, "");
 const API_PREFIX = API_BASE_URL.endsWith("/api") ? "" : "/api";
 
@@ -44,6 +44,14 @@ apiClient.interceptors.response.use(
 );
 
 export const getHealth = () => apiClient.get(`${API_PREFIX}/health`);
+
+export function getDetectors (config = {}) {
+  return apiClient.get(`${API_PREFIX}/detectors`, config)
+}
+
+export function switchDetector (provider) {
+  return apiClient.post(`${API_PREFIX}/detectors/switch`, { provider }, { timeout: 90_000 })
+}
 
 export const getSystemStatus = () =>
   apiClient.get(`${API_PREFIX}/system/status`);

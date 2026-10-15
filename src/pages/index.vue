@@ -73,6 +73,8 @@
         </v-card-text>
       </glass-card>
 
+      <detector-provider-card />
+
       <v-row>
         <v-col cols="12" lg="12" md="12">
           <glass-card class="h-100 hoverable-card">
@@ -101,6 +103,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+  import DetectorProviderCard from '@/components/cards/DetectorProviderCard.vue'
 import ConnectionStatus from '@/components/ConnectionStatus.vue'
 import GlassCard from '@/components/GlassCard.vue'
 import { useToast } from '@/composables/useToast'
